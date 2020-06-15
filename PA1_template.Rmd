@@ -1,5 +1,6 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
+author: "I Carter (Coursera)"
 output: 
   html_document:
     keep_md: true
@@ -8,18 +9,150 @@ output:
 
 ## Loading and preprocessing the data
 
+### Load the data
+
+```{r echo = TRUE}
+data <- read.csv("activity.csv")
+```
+
+### Process/transform the data into a format suitable for your
+analysis
+
+`data$interval` is like `rep(0:11 * 5, 24) + rep(0:23 * 100, each=12)`  
+viz. like 0, 5, ..., 50, 55, 100, 105, ...  
+we want it like 0, 5, ..., 50, 55, 60, 65, ...
+
+This is so that we can make time series plots (otherwise the jump from 55 to 100 makes a difficulty).
+
+We also want it to be a factor variable, but we want to keep the original `interval` column, so we call our new factor `interval_new`. There is no real need to turn our old `interval` column into a factor, but we will anyway.
+
+```{r echo = TRUE}
+data$interval <- as.factor(data$interval)
+data$interval_new <- as.factor(rep(0:287 * 5, 61))
+```
+
+### Taking a look at the dataset
+
+```{r echo = TRUE}
+## Take a look at the data:
+dim(data)
+str(data)
+```
 
 
 ## What is mean total number of steps taken per day?
 
+Ignore any missing values.
+
+### Histogram of the total number of steps taken each day
+
+```{r echo = TRUE}
+library(lattice)
+total <- tapply(data$steps, data$date, sum, na.rm=TRUE)
+hist(total, breaks=22, col="red", main="",
+    xlab="total number of steps taken each day")
+```
+
+### The *mean* and *median* total number of steps taken per day
+
+```{r echo = TRUE}
+mean(total)
+median(total)
+```
 
 
 ## What is the average daily activity pattern?
 
+### Time Series Plot
+
+5-minute interval on the x-axis; average number of steps taken (averaged across all days) on the y-axis.
+
+```{r echo = TRUE}
+intervals <- tapply(data$steps, data$interval_new, mean, na.rm=TRUE)
+plot(intervals~levels(data$interval_new), type="l",
+    main="Average number of steps taken in each 5 minute interval",
+    xlab="5 minute interval",
+    ylab="number of steps (averaged across all days)")
+```
+
+### The 5-minute interval which contains the most steps
+
+The 5-minute interval which on average across all the days in the dataset contains the maximum number of steps:
+
+```{r echo = TRUE}
+temp <- data$interval_new[which.max(intervals)]
+temp <- as.numeric(levels(data$interval))[temp]
+paste("the interval from", temp, "to", temp+5, "contains the greatest number of steps, averaged over all the days.")
+```
 
 
 ## Imputing missing values
 
+Note that there are a number of days/intervals where there are missing
+values (coded as `NA`). The presence of missing days may introduce
+bias into some calculations or summaries of the data.
+
+## total number of missing values
+
+The total number of rows in the dataset with NAs:
+
+```{r echo = TRUE}
+sum(is.na(data))
+```
+
+### strategy for filling in all of the missing values
+
+Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. Here we use the mean for each 5-minute interval.
+
+```{r echo = TRUE}
+## same as before
+intervals <- tapply(data$steps, data$interval_new, mean, na.rm=TRUE)
+intervals <- rep(intervals, 61)
+data$steps <- ifelse(is.na(data$steps), intervals, data$steps)
+```
+
+### new dataset with missing values filled in
+
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+```{r echo = TRUE}
+
+```
+
+### histogram of the total number of steps taken each day
+
+```{r echo = TRUE}
+
+```
+
+### the *mean* and *median* total number of steps taken per day
+
+```{r echo = TRUE}
+
+```
+
+### Report on impact of imputing missing data
+
+Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+Using the dataset with the filled-in missing values
+
+### weekend vs. weekday
+
+ Create a new factor variable in the dataset with two levels -- "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
+```{r echo = TRUE}
+
+```
+
+### Time Series Plots
+
+Make a panel plot containing a time series plot (i.e. `type = "l"`) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
+
+```{r echo = TRUE}
+
+```
+
