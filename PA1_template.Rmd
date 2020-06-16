@@ -56,8 +56,9 @@ hist(total, breaks=22, col="red", main="",
 ### The *mean* and *median* total number of steps taken per day
 
 ```{r echo = TRUE}
-mean(total)
-median(total)
+mean_orig <- mean(total)
+median_orig <- median(total)
+print(paste("Mean is:" mean_orig, ";  Median is:" median_orig))
 ```
 
 
@@ -104,36 +105,44 @@ sum(is.na(data))
 
 Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. Here we use the mean for each 5-minute interval.
 
-```{r echo = TRUE}
-## same as before
-intervals <- tapply(data$steps, data$interval_new, mean, na.rm=TRUE)
-intervals <- rep(intervals, 61)
-data$steps <- ifelse(is.na(data$steps), intervals, data$steps)
-```
-
 ### new dataset with missing values filled in
 
 Create a new dataset that is equal to the original dataset but with the missing data filled in.
 
 ```{r echo = TRUE}
-
+## same as before
+intervals <- tapply(data$steps, data$interval_new, mean, na.rm=TRUE)
+intervals <- rep(intervals, 61)
+data_new <- data        ## make new dataset
+data_new$steps <- ifelse(is.na(data$steps), intervals, data$steps)
 ```
 
 ### histogram of the total number of steps taken each day
 
 ```{r echo = TRUE}
-
+## same code as above, but with filled-in dataset
+total <- tapply(data_new$steps, data_new$date, sum)    ## na.rm=TRUE
+hist(total, breaks=22, col="red", main="",
+    xlab="total number of steps taken each day")
 ```
 
 ### the *mean* and *median* total number of steps taken per day
 
 ```{r echo = TRUE}
-
+mean_new <- mean(total)
+median_new <- median(total)
+print(paste("Mean is:" mean_new, ";  Median is:" median_new))
 ```
 
 ### Report on impact of imputing missing data
 
 Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+```{r echo = TRUE}
+print(paste("New mean:", mean_new, "(old:", mean_orig,
+    ");"))
+print(paste("New median:", median_new, "(old:", median_orig +")."))
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
@@ -145,7 +154,13 @@ Using the dataset with the filled-in missing values
  Create a new factor variable in the dataset with two levels -- "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
 
 ```{r echo = TRUE}
-
+levels <- c("Monday", "Tuesday", "Wednesday", "Thursday",
+    "Friday", "Saturday", "Sunday")
+labels <- c("weekday", "weekday", "weekday", "weekday",
+    "weekday", "weekend", "weekend")
+data_new$weekdays <- weekdays(as.Date(data$date))
+data_new$weekdays <- factor(data$weekdays, levels = levels, labels=labels)
+data$weekdays <- data_new$weekdays      ## stick it in the original set too
 ```
 
 ### Time Series Plots
@@ -153,6 +168,27 @@ Using the dataset with the filled-in missing values
 Make a panel plot containing a time series plot (i.e. `type = "l"`) of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
 
 ```{r echo = TRUE}
-
+temp_old <- tapply(data$steps,
+    list(data$interval_new, data$weekdays), mean, na.rm=TRUE)
+temp_new <- tapply(data_new$steps,
+    list(data_new$interval_new, data_new$weekdays), mean)
+par(mfrow=c(2, 2))
+plot(temp_old["weekday"]~levels(data$interval_new), type="l",
+    main="Weekday (original dataset)",
+    xlab="5 minute interval",
+    ylab="number of steps (averaged across all weekdays)")
+plot(temp_old["weekend"]~levels(data$interval_new), type="l",
+    main="Weekend (original dataset)",
+    xlab="5 minute interval",
+    ylab="number of steps (averaged across all weekend days)")
+plot(temp_new["weekday"]~levels(data_new$interval_new), type="l",
+    main="Weekday (filled-in dataset)",
+    xlab="5 minute interval",
+    ylab="number of steps (averaged across all weekdays)")
+plot(temp_new["weekend"]~levels(data_new$interval_new), type="l",
+    main="Weekend (filled-in dataset)",
+    xlab="5 minute interval",
+    ylab="number of steps (averaged across all weekend days)")
+title("Average number of steps taken in each 5 minute interval")
 ```
 
