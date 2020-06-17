@@ -17,8 +17,7 @@ output:
 data <- read.csv("activity.csv")
 ```
 
-### Process/transform the data into a format suitable for your
-analysis
+### Process/transform the data into a format suitable for your analysis
 
 `data$interval` is like `rep(0:11 * 5, 24) + rep(0:23 * 100, each=12)`  
 viz. like 0, 5, ..., 50, 55, 100, 105, ...  
@@ -125,7 +124,7 @@ paste("the interval from", temp, "to", temp+5, "contains the greatest number of 
 ## [1] "the interval from 835 to 840 contains the greatest number of steps, averaged over all the days."
 ```
 
-This prints out using the original `data$interval` format, i.e. 515 to 520 means 05:15 to 05:20. I guess the guy must go for a jog at dawn or something.
+This prints out using the original `data$interval` format, i.e. 835 to 840 means 08:35 to 08:40. I guess our guy walks to work.
 
 
 ## Imputing missing values
@@ -143,6 +142,17 @@ sum(is.na(data))
 
 ```
 ## [1] 2304
+```
+
+The percentage of rows in the dataset with NAs:
+
+
+```r
+sum(is.na(data)) / length(data$steps) * 100
+```
+
+```
+## [1] 13.11475
 ```
 
 ### strategy for filling in all of the missing values
@@ -165,7 +175,7 @@ Create a new dataset that is equal to the original dataset but with the missing 
 
 ```r
 data_new <- data        ## make new dataset
-data_new$steps <- ifelse(is.na(data$steps), intervals, data$steps)
+data_new$steps <- ifelse(is.na(data_new$steps), intervals, data_new$steps)
 ```
 
 ### histogram of the total number of steps taken each day
@@ -173,12 +183,12 @@ data_new$steps <- ifelse(is.na(data$steps), intervals, data$steps)
 
 ```r
 ## same code as above, but with filled-in dataset
-total <- tapply(data_new$steps, data_new$date, sum)    ## na.rm=TRUE
-hist(total, breaks=22, col="red", main="",
+total_new <- tapply(data_new$steps, data_new$date, sum)    ## na.rm=FALSE
+hist(total_new, breaks=22, col="red", main="",
     xlab="total number of steps taken each day")
 ```
 
-![](figure/unnamed-chunk-11-1.png)<!-- -->
+![](figure/unnamed-chunk-12-1.png)<!-- -->
 
 There is no longer the large number of zero values (which were probably caused by NAs).  
 The center spike is also a good bit higher.
@@ -187,8 +197,8 @@ The center spike is also a good bit higher.
 
 
 ```r
-mean_new <- mean(total)
-median_new <- median(total)
+mean_new <- mean(total_new)
+median_new <- median(total_new)
 print(paste("Mean is:", mean_new, ";  Median is:", median_new))
 ```
 
@@ -198,10 +208,11 @@ print(paste("Mean is:", mean_new, ";  Median is:", median_new))
 
 ### Report on impact of imputing missing data
 
-Do these values differ from the estimates from the first part of the assignment?  
-Answer = Yes, but not 
+***Do these values differ from the estimates from the first part of the assignment?***  
+Answer = Yes, the funny thing is that the mean and the median are now the same!  
+I think this has something to do with filling in the data using the mean value for each interval.
 
-What is the impact of imputing missing data on the estimates of the total daily number of steps?  
+***What is the impact of imputing missing data on the estimates of the total daily number of steps?***  
 Answer = The mean and the median are a bit higher when calculated using imputed missing data, but the difference is not very great.
 
 
@@ -225,11 +236,11 @@ print(paste("New median:", median_new, "(old:", median_orig, ")."))
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
-Using the dataset with the filled-in missing values
+*Using the dataset with the filled-in missing values.*
 
 ### weekend vs. weekday
 
- Create a new factor variable in the dataset with two levels -- "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+Create a new factor variable in the dataset with two levels -- "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
 
 
 ```r
@@ -239,7 +250,6 @@ labels <- c("weekday", "weekday", "weekday", "weekday",
     "weekday", "weekend", "weekend")
 data_new$weekdays <- weekdays(as.Date(data_new$date))
 data_new$weekdays <- factor(data_new$weekdays, levels=levels, labels=labels)
-data$weekdays <- data_new$weekdays      ## stick it in the original set too
 ```
 
 ### Time Series Plots
@@ -248,32 +258,27 @@ Make a panel plot containing a time series plot (i.e. `type = "l"`) of the 5-min
 
 ### Average number of steps taken in each 5 minute interval (weekday vs. weekend)
 
-Showing original data on top row and filled-in data on bottom row.
-
 
 ```r
-temp_old <- tapply(data$steps,
-    list(data$interval_new, data$weekdays), mean, na.rm=TRUE)
 temp_new <- tapply(data_new$steps,
     list(data_new$interval_new, data_new$weekdays), mean)
-par(mfrow=c(2, 2))
-plot(temp_old[,"weekday"]~levels(data$interval_new), type="l",
-    main="Weekday (original dataset)",
-    xlab="5 minute interval",
-    ylab="# steps (mean across weekdays)")
-plot(temp_old[,"weekend"]~levels(data$interval_new), type="l",
-    main="Weekend (original dataset)",
-    xlab="5 minute interval",
-    ylab="# steps (mean across weekend days)")
+par(mfrow=c(2, 1))
 plot(temp_new[,"weekday"]~levels(data_new$interval_new), type="l",
-    main="Weekday (filled-in dataset)",
+    main="Weekday",
     xlab="5 minute interval",
-    ylab="# steps (mean across weekdays)")
+    ylab="# steps")
 plot(temp_new[,"weekend"]~levels(data_new$interval_new), type="l",
-    main="Weekend (filled-in dataset)",
+    main="Weekend",
     xlab="5 minute interval",
-    ylab="# steps (mean across weekend days)")
+    ylab="# steps")
 ```
 
-![](figure/unnamed-chunk-15-1.png)<!-- -->
-There are definite differences
+![](figure/unnamed-chunk-16-1.png)<!-- -->
+
+There are definite differences in activity pattern between weekdays and weekend.
+
+There is a high burst of activity on weekday mornings, which doesn't occur as much on weekends. In general the bulk of activity at weekends starts a bit later and ends a bit later than on weekdays, and there is more activity overall at the weekend.
+
+----
+
+This document was processed on: 2020-06-17.
